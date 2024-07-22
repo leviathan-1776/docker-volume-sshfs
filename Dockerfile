@@ -1,15 +1,13 @@
-FROM golang:1.10-alpine as builder
-COPY . /go/src/github.com/vieux/docker-volume-sshfs
-WORKDIR /go/src/github.com/vieux/docker-volume-sshfs
+FROM golang:1.22-alpine as builder
+WORKDIR /app
+COPY main.go go.mod go.sum ./
 RUN set -ex \
-    && apk add --no-cache --virtual .build-deps \
-    gcc libc-dev \
-    && go install --ldflags '-extldflags "-static"' \
+    && apk add --no-cache --virtual .build-deps gcc libc-dev \
+    && go build --ldflags '-extldflags "-static"' -o docker-volume-sshfs \
     && apk del .build-deps
-CMD ["/go/bin/docker-volume-sshfs"]
 
-FROM alpine
+FROM alpine:3.20.1
 RUN apk update && apk add sshfs
 RUN mkdir -p /run/docker/plugins /mnt/state /mnt/volumes
-COPY --from=builder /go/bin/docker-volume-sshfs .
+COPY --from=builder /app/docker-volume-sshfs .
 CMD ["docker-volume-sshfs"]

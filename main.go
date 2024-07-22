@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -13,8 +12,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/go-plugins-helpers/volume"
+	"github.com/sirupsen/logrus"
 )
 
 const socketAddress = "/run/docker/plugins/sshfs.sock"
@@ -47,7 +46,7 @@ func newSshfsDriver(root string) (*sshfsDriver, error) {
 		volumes:   map[string]*sshfsVolume{},
 	}
 
-	data, err := ioutil.ReadFile(d.statePath)
+	data, err := os.ReadFile(d.statePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			logrus.WithField("statePath", d.statePath).Debug("no state found")
@@ -70,8 +69,8 @@ func (d *sshfsDriver) saveState() {
 		return
 	}
 
-	if err := ioutil.WriteFile(d.statePath, data, 0644); err != nil {
-		logrus.WithField("savestate", d.statePath).Error(err)
+	if err := os.WriteFile(d.statePath, data, 0644); err != nil {
+		logrus.WithField("saveState", d.statePath).Error(err)
 	}
 }
 
@@ -102,7 +101,7 @@ func (d *sshfsDriver) Create(r *volume.CreateRequest) error {
 	if v.Sshcmd == "" {
 		return logError("'sshcmd' option required")
 	}
-	v.Mountpoint = filepath.Join(d.root, fmt.Sprintf("%x", md5.Sum([]byte(v.Sshcmd))))
+	v.Mountpoint = filepath.Join(d.root, fmt.Sprintf("%x", md5.Sum([]byte(r.Name))))
 
 	d.volumes[r.Name] = v
 
