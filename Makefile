@@ -1,7 +1,7 @@
-PLUGIN_NAME = vieux/sshfs
-PLUGIN_TAG ?= next
+PLUGIN_NAME = leviathan1776/sshfs
+PLUGIN_TAG ?= amd64 # arm64
 
-all: clean rootfs create
+all: clean rootfs create push
 
 clean:
 	@echo "### rm ./plugin"
@@ -9,14 +9,14 @@ clean:
 
 rootfs:
 	@echo "### docker build: rootfs image with docker-volume-sshfs"
-	@docker build -q -t ${PLUGIN_NAME}:rootfs .
+	@docker buildx build --platform linux/${PLUGIN_TAG} -t ${PLUGIN_NAME}:${PLUGIN_TAG} .
 	@echo "### create rootfs directory in ./plugin/rootfs"
 	@mkdir -p ./plugin/rootfs
-	@docker create --name tmp ${PLUGIN_NAME}:rootfs
+	@docker create --name tmp ${PLUGIN_NAME}:${PLUGIN_TAG}
 	@docker export tmp | tar -x -C ./plugin/rootfs
+	@docker rm -vf tmp
 	@echo "### copy config.json to ./plugin/"
 	@cp config.json ./plugin/
-	@docker rm -vf tmp
 
 create:
 	@echo "### remove existing plugin ${PLUGIN_NAME}:${PLUGIN_TAG} if exists"

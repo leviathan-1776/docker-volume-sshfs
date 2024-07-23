@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/docker/go-plugins-helpers/volume"
 	"github.com/sirupsen/logrus"
@@ -170,9 +171,14 @@ func (d *sshfsDriver) Mount(r *volume.MountRequest) (*volume.MountResponse, erro
 		if fi != nil && !fi.IsDir() {
 			return &volume.MountResponse{}, logError("%v already exist and it's not a directory", v.Mountpoint)
 		}
-
-		if err := d.mountVolume(v); err != nil {
-			return &volume.MountResponse{}, logError(err.Error())
+		for {
+			// retry sshfs until success. todo: set max retry count or timeout
+			if err := d.mountVolume(v); err != nil {
+				logrus.Errorf("mount volume error %s", err.Error())
+				time.Sleep(10 * time.Second)
+			} else {
+				break
+			}
 		}
 	}
 
@@ -237,7 +243,7 @@ func (d *sshfsDriver) Capabilities() *volume.CapabilitiesResponse {
 }
 
 func (d *sshfsDriver) mountVolume(v *sshfsVolume) error {
-	cmd := exec.Command("sshfs", "-oStrictHostKeyChecking=no", v.Sshcmd, v.Mountpoint)
+	cmd := exec.Command("sshfs", v.Sshcmd, v.Mountpoint)
 	if v.Port != "" {
 		cmd.Args = append(cmd.Args, "-p", v.Port)
 	}
