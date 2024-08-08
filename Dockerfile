@@ -6,7 +6,7 @@ RUN set -ex \
     && go build --ldflags '-extldflags "-static"' -o docker-volume-sshfs \
     && apk del .build-deps
 
-FROM alpine:3.20.1
+FROM alpine:3.20.2
 RUN apk update && apk add sshfs
 RUN mkdir -p /run/docker/plugins /mnt/state /mnt/volumes
 COPY --from=builder /app/docker-volume-sshfs .

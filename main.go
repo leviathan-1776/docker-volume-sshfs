@@ -255,8 +255,7 @@ func (d *sshfsDriver) mountVolume(v *sshfsVolume) error {
 	for _, option := range v.Options {
 		cmd.Args = append(cmd.Args, "-o", option)
 	}
-
-	logrus.Debug(cmd.Args)
+	cmd.Args = append(cmd.Args, "-o", "StrictHostKeyChecking=no")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return logError("sshfs command execute failed: %v (%s)", err, output)
